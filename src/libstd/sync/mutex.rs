@@ -566,4 +566,54 @@ mod test {
         let mut m = Mutex::new();
         assert!(m.try_lock().is_some());
     }
+
+    #[test]
+    fn native() {
+        use unstable;
+        static mut n: unstable::mutex::Mutex = unstable::mutex::MUTEX_INIT;
+        let N = 1000000;
+        let T = 8;
+        let (p, c) = SharedChan::new();
+        for i in range(0, T) {
+            let c2 = c.clone();
+            native::task::spawn(proc() {
+                for j in range(0, N) {
+                    unsafe {
+                        n.lock();
+                        n.unlock();
+                    }
+                }
+                c2.send(());
+            })
+        }
+
+        for i in range(0, T) {
+            p.recv();
+        }
+    }
+
+    #[test]
+    fn mixed() {
+        static mut m: StaticMutex = MUTEX_INIT;
+        let N = 1000000;
+        let T = 8;
+        let (p, c) = SharedChan::new();
+        for i in range(0, T) {
+            let c2 = c.clone();
+            native::task::spawn(proc() {
+                let v = 3;
+                for j in range(0, N) {
+                    unsafe {
+                        m.lock();
+                    }
+                }
+                c2.send(());
+            })
+        }
+
+        for i in range(0, T) {
+            p.recv();
+        }
+    }
 }
+
