@@ -219,9 +219,16 @@ impl MutexState {
 
     // if queue_size == 0 {++lockers; true} else {false}
     pub fn should_lock(&self) -> bool {
-        // optimistically speculate we have no contention
-        let mut a = self.state.compare_and_swap(0, (1 << LOCKERS_SHIFT), atomics::SeqCst);
-        if a == 0 {return true;}
+        let mut a = self.state.load(atomics::Relaxed);
+
+        if (a & QUEUE_SIZE_MASK) == 0 {
+            let b = a + (1 << LOCKERS_SHIFT);
+            let v = self.state.compare_and_swap(a, b, atomics::SeqCst);
+            if a == v {return true;}
+            a = v;
+        } else {
+            a = self.state.load(atomics::SeqCst);
+        }
 
         loop {
             let (b, r) = if (a & QUEUE_SIZE_MASK) != 0 {
@@ -237,10 +244,7 @@ impl MutexState {
 
     // ++queue_size; if(lockers == 0) {++lockers; true} else {false}
     pub fn queue_and_should_lock(&self) -> bool {
-        // optimistically speculate we have only green tasks and nothing MUST_QUEUE
-        let mut a = self.state.compare_and_swap((1 << LOCKERS_SHIFT),
-            (1 << LOCKERS_SHIFT) + (1 << QUEUE_SIZE_SHIFT), atomics::SeqCst);
-        if a == (1 << LOCKERS_SHIFT) {return false;}
+        let mut a = self.state.load(atomics::Relaxed);
 
         loop {
             let (b, r) = if (a & LOCKERS_MASK) == 0 {
@@ -261,9 +265,7 @@ impl MutexState {
 
     // if(queue_size != 0 && lockers == 1) {--queue_size; true} else {--lockers; false}
     pub fn should_dequeue(&self) -> bool {
-        // optimistically speculate we have no contention
-        let mut a = self.state.compare_and_swap((1 << LOCKERS_SHIFT), 0, atomics::SeqCst);
-        if a == (1 << LOCKERS_SHIFT) {return false;}
+        let mut a = self.state.load(atomics::Relaxed);
 
         loop {
             let (b, r) = if ((a & LOCKERS_MASK) == (1 << LOCKERS_SHIFT)
