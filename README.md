@@ -22,7 +22,7 @@ Snapshot binaries are currently built and tested on several platforms:
 * Linux (various distributions), x86 and x86-64
 * OSX 10.6 ("Snow Leopard") or greater, x86 and x86-64
 
-You may find that other platforms work, but these are our "tier 1"
+You may find that other work, but these are our "tier 1"
 supported build environments that are most likely to work.
 
 > ***Note:*** Windows users should read the detailed
