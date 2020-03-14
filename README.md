@@ -24,7 +24,7 @@ or reading the [rustc dev guide][rustcguidebuild].
 [rustcguidebuild]: https://rustc-dev-guide.rust-lang.org/building/how-to-build-and-run.html
 
 ### Building on *nix
-1. Make sure you have installed the dependencies:
+1. Make sure you have installed the dependencies - test:
 
    * `g++` 5.1 or later or `clang++` 3.5 or later
    * `python` 2.7 (but not 3.x)
